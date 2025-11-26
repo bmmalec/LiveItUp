@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live It Up! - Lifestyle Simulation Game</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>💰 Live It Up! 💰</h1>
+            <p class="tagline">Choose your income, live your lifestyle, try not to go broke!</p>
+        </header>
+
+        <div id="gameScreen" class="game-screen">
+            <!-- Start Screen -->
+            <div id="startScreen" class="screen active">
+                <h2>Choose Your Income Level</h2>
+                <div class="income-selection">
+                    <button class="income-btn" data-income="50000">
+                        <span class="income-label">Modest</span>
+                        <span class="income-amount">$50,000/year</span>
+                    </button>
+                    <button class="income-btn" data-income="100000">
+                        <span class="income-label">Comfortable</span>
+                        <span class="income-amount">$100,000/year</span>
+                    </button>
+                    <button class="income-btn" data-income="250000">
+                        <span class="income-label">Wealthy</span>
+                        <span class="income-amount">$250,000/year</span>
+                    </button>
+                    <button class="income-btn" data-income="500000">
+                        <span class="income-label">Rich</span>
+                        <span class="income-amount">$500,000/year</span>
+                    </button>
+                    <button class="income-btn" data-income="1000000">
+                        <span class="income-label">Super Rich</span>
+                        <span class="income-amount">$1,000,000/year</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Main Game Screen -->
+            <div id="mainGame" class="screen">
+                <div class="stats-panel">
+                    <div class="stat-box">
+                        <div class="stat-label">Current Balance</div>
+                        <div id="balance" class="stat-value">$0</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Annual Income</div>
+                        <div id="income" class="stat-value">$0</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Monthly Expenses</div>
+                        <div id="expenses" class="stat-value">$0</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Days Survived</div>
+                        <div id="daysSurvived" class="stat-value">0</div>
+                    </div>
+                </div>
+
+                <div class="game-controls">
+                    <button id="pauseBtn" class="control-btn">⏸ Pause</button>
+                    <button id="speedBtn" class="control-btn">⏩ Speed: 1x</button>
+                    <button id="restartBtn" class="control-btn">🔄 Restart</button>
+                </div>
+
+                <div class="shop-container">
+                    <!-- Housing -->
+                    <div class="shop-category">
+                        <h3>🏠 Housing</h3>
+                        <div id="housingItems" class="item-grid"></div>
+                    </div>
+
+                    <!-- Vehicles -->
+                    <div class="shop-category">
+                        <h3>🚗 Vehicles</h3>
+                        <div id="vehicleItems" class="item-grid"></div>
+                    </div>
+
+                    <!-- Luxury Items -->
+                    <div class="shop-category">
+                        <h3>💎 Luxury Items</h3>
+                        <div id="luxuryItems" class="item-grid"></div>
+                    </div>
+
+                    <!-- Daily Lifestyle -->
+                    <div class="shop-category">
+                        <h3>☕ Lifestyle Expenses</h3>
+                        <div id="lifestyleItems" class="item-grid"></div>
+                    </div>
+                </div>
+
+                <div class="owned-items">
+                    <h3>Your Possessions</h3>
+                    <div id="ownedList" class="owned-list"></div>
+                </div>
+            </div>
+
+            <!-- Game Over Screen -->
+            <div id="gameOverScreen" class="screen">
+                <h2 class="game-over-title">💸 Game Over! 💸</h2>
+                <p class="game-over-message">You've gone broke!</p>
+                <div class="final-stats">
+                    <div class="final-stat">
+                        <span class="final-label">You survived:</span>
+                        <span id="finalDays" class="final-value">0 days</span>
+                    </div>
+                    <div class="final-stat">
+                        <span class="final-label">Starting Income:</span>
+                        <span id="finalIncome" class="final-value">$0</span>
+                    </div>
+                    <div class="final-stat">
+                        <span class="final-label">Items Owned:</span>
+                        <span id="finalItems" class="final-value">0</span>
+                    </div>
+                </div>
+                <button id="playAgainBtn" class="play-again-btn">Play Again</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+</html>
