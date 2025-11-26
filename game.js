@@ -7,44 +7,69 @@ const gameState = {
     daysPassed: 0,
     isPaused: false,
     gameSpeed: 1,
-    ownedItems: [],
+    ownedItems: [], // Array of { itemId, category, quantity, purchasePrice, isFinanced, remainingBalance, monthlyPayment }
     gameLoop: null
 };
 
-// Game Items Data
+// Game Items Data with depreciation and financing options
 const gameItems = {
     housing: [
-        { id: 'apartment', name: 'Studio Apartment', price: 150000, monthlyExpense: 1200, emoji: '🏢' },
-        { id: 'condo', name: 'Luxury Condo', price: 450000, monthlyExpense: 2800, emoji: '🏘️' },
-        { id: 'house', name: 'Suburban House', price: 650000, monthlyExpense: 3500, emoji: '🏡' },
-        { id: 'mansion', name: 'Mansion', price: 2500000, monthlyExpense: 12000, emoji: '🏰' },
-        { id: 'penthouse', name: 'Penthouse Suite', price: 5000000, monthlyExpense: 25000, emoji: '🌆' },
-        { id: 'estate', name: 'Private Estate', price: 15000000, monthlyExpense: 75000, emoji: '🏛️' }
+        { id: 'apartment', name: 'Studio Apartment', price: 150000, monthlyExpense: 1200, emoji: '🏢',
+          depreciation: 0.02, downPayment: 0.20, financeMonths: 360, interestRate: 0.04, allowMultiple: true },
+        { id: 'condo', name: 'Luxury Condo', price: 450000, monthlyExpense: 2800, emoji: '🏘️',
+          depreciation: 0.02, downPayment: 0.20, financeMonths: 360, interestRate: 0.04, allowMultiple: true },
+        { id: 'house', name: 'Suburban House', price: 650000, monthlyExpense: 3500, emoji: '🏡',
+          depreciation: 0.02, downPayment: 0.20, financeMonths: 360, interestRate: 0.04, allowMultiple: true },
+        { id: 'mansion', name: 'Mansion', price: 2500000, monthlyExpense: 12000, emoji: '🏰',
+          depreciation: 0.01, downPayment: 0.25, financeMonths: 360, interestRate: 0.035, allowMultiple: true },
+        { id: 'penthouse', name: 'Penthouse Suite', price: 5000000, monthlyExpense: 25000, emoji: '🌆',
+          depreciation: 0.01, downPayment: 0.30, financeMonths: 360, interestRate: 0.035, allowMultiple: false },
+        { id: 'estate', name: 'Private Estate', price: 15000000, monthlyExpense: 75000, emoji: '🏛️',
+          depreciation: 0.005, downPayment: 0.30, financeMonths: 360, interestRate: 0.03, allowMultiple: false }
     ],
     vehicles: [
-        { id: 'sedan', name: 'Economy Sedan', price: 25000, monthlyExpense: 350, emoji: '🚙' },
-        { id: 'suv', name: 'Luxury SUV', price: 75000, monthlyExpense: 800, emoji: '🚗' },
-        { id: 'sports', name: 'Sports Car', price: 150000, monthlyExpense: 1500, emoji: '🏎️' },
-        { id: 'luxury', name: 'Luxury Sedan', price: 250000, monthlyExpense: 2200, emoji: '🚘' },
-        { id: 'supercar', name: 'Supercar', price: 500000, monthlyExpense: 4000, emoji: '🏁' },
-        { id: 'yacht', name: 'Yacht', price: 2000000, monthlyExpense: 15000, emoji: '🛥️' },
-        { id: 'jet', name: 'Private Jet', price: 10000000, monthlyExpense: 85000, emoji: '✈️' }
+        { id: 'sedan', name: 'Economy Sedan', price: 25000, monthlyExpense: 350, emoji: '🚙',
+          depreciation: 0.15, downPayment: 0.10, financeMonths: 60, interestRate: 0.05, allowMultiple: true },
+        { id: 'suv', name: 'Luxury SUV', price: 75000, monthlyExpense: 800, emoji: '🚗',
+          depreciation: 0.12, downPayment: 0.15, financeMonths: 72, interestRate: 0.045, allowMultiple: true },
+        { id: 'sports', name: 'Sports Car', price: 150000, monthlyExpense: 1500, emoji: '🏎️',
+          depreciation: 0.10, downPayment: 0.20, financeMonths: 72, interestRate: 0.04, allowMultiple: true },
+        { id: 'luxury', name: 'Luxury Sedan', price: 250000, monthlyExpense: 2200, emoji: '🚘',
+          depreciation: 0.08, downPayment: 0.25, financeMonths: 72, interestRate: 0.04, allowMultiple: true },
+        { id: 'supercar', name: 'Supercar', price: 500000, monthlyExpense: 4000, emoji: '🏁',
+          depreciation: 0.05, downPayment: 0.30, financeMonths: 84, interestRate: 0.035, allowMultiple: true },
+        { id: 'yacht', name: 'Yacht', price: 2000000, monthlyExpense: 15000, emoji: '🛥️',
+          depreciation: 0.08, downPayment: 0.30, financeMonths: 240, interestRate: 0.045, allowMultiple: true },
+        { id: 'jet', name: 'Private Jet', price: 10000000, monthlyExpense: 85000, emoji: '✈️',
+          depreciation: 0.04, downPayment: 0.40, financeMonths: 240, interestRate: 0.04, allowMultiple: false }
     ],
     luxury: [
-        { id: 'watch', name: 'Designer Watch', price: 15000, monthlyExpense: 0, emoji: '⌚' },
-        { id: 'jewelry', name: 'Fine Jewelry', price: 35000, monthlyExpense: 0, emoji: '💍' },
-        { id: 'art', name: 'Art Collection', price: 100000, monthlyExpense: 500, emoji: '🖼️' },
-        { id: 'pool', name: 'Swimming Pool', price: 85000, monthlyExpense: 600, emoji: '🏊' },
-        { id: 'theater', name: 'Home Theater', price: 50000, monthlyExpense: 100, emoji: '🎬' },
-        { id: 'wine', name: 'Wine Cellar', price: 75000, monthlyExpense: 1200, emoji: '🍷' }
+        { id: 'watch', name: 'Designer Watch', price: 15000, monthlyExpense: 0, emoji: '⌚',
+          depreciation: 0.20, allowMultiple: true },
+        { id: 'jewelry', name: 'Fine Jewelry', price: 35000, monthlyExpense: 0, emoji: '💍',
+          depreciation: 0.15, allowMultiple: true },
+        { id: 'art', name: 'Art Collection', price: 100000, monthlyExpense: 500, emoji: '🖼️',
+          depreciation: 0.05, allowMultiple: true },
+        { id: 'pool', name: 'Swimming Pool', price: 85000, monthlyExpense: 600, emoji: '🏊',
+          depreciation: 0.30, allowMultiple: false },
+        { id: 'theater', name: 'Home Theater', price: 50000, monthlyExpense: 100, emoji: '🎬',
+          depreciation: 0.25, allowMultiple: false },
+        { id: 'wine', name: 'Wine Cellar', price: 75000, monthlyExpense: 1200, emoji: '🍷',
+          depreciation: 0.10, allowMultiple: false }
     ],
     lifestyle: [
-        { id: 'basic', name: 'Basic Living', price: 0, monthlyExpense: 1500, emoji: '🍞', isRecurring: true },
-        { id: 'dining', name: 'Fine Dining', price: 0, monthlyExpense: 2000, emoji: '🍽️', isRecurring: true },
-        { id: 'travel', name: 'Luxury Travel', price: 0, monthlyExpense: 3500, emoji: '✈️', isRecurring: true },
-        { id: 'shopping', name: 'Designer Shopping', price: 0, monthlyExpense: 2500, emoji: '🛍️', isRecurring: true },
-        { id: 'spa', name: 'Spa & Wellness', price: 0, monthlyExpense: 1800, emoji: '💆', isRecurring: true },
-        { id: 'entertainment', name: 'Premium Entertainment', price: 0, monthlyExpense: 1000, emoji: '🎭', isRecurring: true }
+        { id: 'basic', name: 'Basic Living', price: 0, monthlyExpense: 1500, emoji: '🍞',
+          isSubscription: true, allowMultiple: false, canCancel: false },
+        { id: 'dining', name: 'Fine Dining', price: 0, monthlyExpense: 2000, emoji: '🍽️',
+          isSubscription: true, allowMultiple: false, canCancel: true },
+        { id: 'travel', name: 'Luxury Travel', price: 0, monthlyExpense: 3500, emoji: '✈️',
+          isSubscription: true, allowMultiple: false, canCancel: true },
+        { id: 'shopping', name: 'Designer Shopping', price: 0, monthlyExpense: 2500, emoji: '🛍️',
+          isSubscription: true, allowMultiple: false, canCancel: true },
+        { id: 'spa', name: 'Spa & Wellness', price: 0, monthlyExpense: 1800, emoji: '💆',
+          isSubscription: true, allowMultiple: false, canCancel: true },
+        { id: 'entertainment', name: 'Premium Entertainment', price: 0, monthlyExpense: 1000, emoji: '🎭',
+          isSubscription: true, allowMultiple: false, canCancel: true }
     ]
 };
 
@@ -80,7 +105,8 @@ function startGame(income) {
     gameState.gameSpeed = 1;
 
     // Add basic living expense by default
-    addItem(gameItems.lifestyle[0]);
+    const basicLiving = gameItems.lifestyle[0];
+    addItem(basicLiving, 'lifestyle', false);
 
     renderShop();
     updateUI();
@@ -110,7 +136,29 @@ function advanceDay() {
     // Monthly income and expenses (every 30 days)
     if (gameState.daysPassed % 30 === 0) {
         gameState.balance += gameState.monthlyIncome;
-        gameState.balance -= gameState.monthlyExpenses;
+
+        // Calculate total monthly expenses including loan payments
+        let totalMonthlyExpenses = 0;
+        gameState.ownedItems.forEach(owned => {
+            const item = findItem(owned.itemId, owned.category);
+            // Regular monthly expense
+            totalMonthlyExpenses += item.monthlyExpense * (owned.quantity || 1);
+            // Loan payment if financed
+            if (owned.isFinanced && owned.monthlyPayment) {
+                totalMonthlyExpenses += owned.monthlyPayment;
+                // Reduce remaining balance
+                const principal = owned.monthlyPayment - (owned.remainingBalance * owned.interestRate / 12);
+                owned.remainingBalance -= principal;
+                if (owned.remainingBalance <= 0) {
+                    owned.isFinanced = false;
+                    owned.remainingBalance = 0;
+                    owned.monthlyPayment = 0;
+                }
+            }
+        });
+
+        gameState.monthlyExpenses = totalMonthlyExpenses;
+        gameState.balance -= totalMonthlyExpenses;
     }
 
     updateUI();
@@ -121,69 +169,193 @@ function advanceDay() {
     }
 }
 
-// Render Shop
-function renderShop() {
-    renderCategory('housingItems', gameItems.housing);
-    renderCategory('vehicleItems', gameItems.vehicles);
-    renderCategory('luxuryItems', gameItems.luxury);
-    renderCategory('lifestyleItems', gameItems.lifestyle);
+// Find item by ID and category
+function findItem(itemId, category) {
+    return gameItems[category].find(item => item.id === itemId);
 }
 
-function renderCategory(containerId, items) {
+// Render Shop
+function renderShop() {
+    renderCategory('housingItems', gameItems.housing, 'housing');
+    renderCategory('vehicleItems', gameItems.vehicles, 'vehicles');
+    renderCategory('luxuryItems', gameItems.luxury, 'luxury');
+    renderCategory('lifestyleItems', gameItems.lifestyle, 'lifestyle');
+}
+
+function renderCategory(containerId, items, category) {
     const container = document.getElementById(containerId);
     container.innerHTML = '';
 
     items.forEach(item => {
-        const itemCard = createItemCard(item);
+        const itemCard = createItemCard(item, category);
         container.appendChild(itemCard);
     });
 }
 
-function createItemCard(item) {
+function createItemCard(item, category) {
     const card = document.createElement('div');
     card.className = 'item-card';
 
-    const isOwned = gameState.ownedItems.some(owned => owned.id === item.id);
+    const ownedItem = gameState.ownedItems.find(owned => owned.itemId === item.id && owned.category === category);
+    const quantity = ownedItem ? ownedItem.quantity : 0;
     const canAfford = gameState.balance >= item.price;
+    const canAffordDownPayment = item.downPayment ? gameState.balance >= (item.price * item.downPayment) : canAfford;
 
-    if (isOwned) {
+    if (quantity > 0) {
         card.classList.add('owned');
     }
+
+    const downPaymentAmount = item.downPayment ? item.price * item.downPayment : item.price;
+    const monthlyPayment = item.downPayment ? calculateMonthlyPayment(item.price - downPaymentAmount, item.interestRate, item.financeMonths) : 0;
 
     card.innerHTML = `
         <div class="item-emoji">${item.emoji}</div>
         <div class="item-name">${item.name}</div>
+        ${quantity > 0 ? `<div class="item-quantity">Owned: ${quantity}</div>` : ''}
         <div class="item-price">${formatMoney(item.price)}</div>
-        <div class="item-expense">${formatMoney(item.monthlyExpense)}/mo</div>
-        ${isOwned
-            ? '<button class="item-btn owned-btn" disabled>Owned</button>'
-            : `<button class="item-btn ${canAfford ? '' : 'disabled'}" ${canAfford ? '' : 'disabled'}>Buy</button>`
-        }
+        ${item.downPayment ? `
+            <div class="item-down-payment">Down: ${formatMoney(downPaymentAmount)} (${(item.downPayment * 100).toFixed(0)}%)</div>
+            <div class="item-financing">+${formatMoney(monthlyPayment)}/mo for ${item.financeMonths}mo</div>
+        ` : ''}
+        <div class="item-expense">${item.monthlyExpense > 0 ? formatMoney(item.monthlyExpense) + '/mo' : 'No upkeep'}</div>
+        <div class="item-buttons">
+            ${(!ownedItem || item.allowMultiple) ? `
+                ${item.downPayment ? `
+                    <button class="item-btn ${canAffordDownPayment ? 'finance-btn' : 'disabled'}"
+                            ${canAffordDownPayment ? '' : 'disabled'}
+                            data-action="finance">Finance</button>
+                ` : ''}
+                <button class="item-btn ${canAfford ? '' : 'disabled'}"
+                        ${canAfford ? '' : 'disabled'}
+                        data-action="buy">Buy Cash</button>
+            ` : ''}
+        </div>
     `;
 
-    const btn = card.querySelector('.item-btn');
-    if (btn && !isOwned && canAfford) {
-        btn.addEventListener('click', () => buyItem(item));
+    // Add event listeners for buy buttons
+    const buyBtn = card.querySelector('[data-action="buy"]');
+    if (buyBtn && canAfford) {
+        buyBtn.addEventListener('click', () => buyItem(item, category, false));
+    }
+
+    const financeBtn = card.querySelector('[data-action="finance"]');
+    if (financeBtn && canAffordDownPayment) {
+        financeBtn.addEventListener('click', () => buyItem(item, category, true));
     }
 
     return card;
 }
 
+// Calculate monthly payment for financing
+function calculateMonthlyPayment(principal, annualRate, months) {
+    if (months === 0 || annualRate === 0) return principal;
+    const monthlyRate = annualRate / 12;
+    return principal * (monthlyRate * Math.pow(1 + monthlyRate, months)) / (Math.pow(1 + monthlyRate, months) - 1);
+}
+
 // Buy Item
-function buyItem(item) {
-    if (gameState.balance >= item.price) {
-        gameState.balance -= item.price;
-        addItem(item);
+function buyItem(item, category, useFinancing) {
+    const cost = useFinancing && item.downPayment ? item.price * item.downPayment : item.price;
+
+    if (gameState.balance >= cost) {
+        gameState.balance -= cost;
+        addItem(item, category, useFinancing);
         renderShop();
         updateUI();
     }
 }
 
-function addItem(item) {
-    if (!gameState.ownedItems.some(owned => owned.id === item.id)) {
-        gameState.ownedItems.push(item);
-        gameState.monthlyExpenses += item.monthlyExpense;
+function addItem(item, category, isFinanced) {
+    const existingItem = gameState.ownedItems.find(owned => owned.itemId === item.id && owned.category === category);
+
+    if (existingItem && item.allowMultiple) {
+        existingItem.quantity = (existingItem.quantity || 1) + 1;
+
+        // Add financing info if financed
+        if (isFinanced && item.downPayment) {
+            const principal = item.price * (1 - item.downPayment);
+            const monthlyPayment = calculateMonthlyPayment(principal, item.interestRate, item.financeMonths);
+            existingItem.isFinanced = true;
+            existingItem.remainingBalance = (existingItem.remainingBalance || 0) + principal;
+            existingItem.monthlyPayment = (existingItem.monthlyPayment || 0) + monthlyPayment;
+            existingItem.interestRate = item.interestRate;
+        }
+    } else if (!existingItem) {
+        const ownedItem = {
+            itemId: item.id,
+            category: category,
+            quantity: 1,
+            purchasePrice: item.price,
+            purchaseDay: gameState.daysPassed,
+            isFinanced: false,
+            remainingBalance: 0,
+            monthlyPayment: 0
+        };
+
+        // Add financing info if financed
+        if (isFinanced && item.downPayment) {
+            const principal = item.price * (1 - item.downPayment);
+            const monthlyPayment = calculateMonthlyPayment(principal, item.interestRate, item.financeMonths);
+            ownedItem.isFinanced = true;
+            ownedItem.remainingBalance = principal;
+            ownedItem.monthlyPayment = monthlyPayment;
+            ownedItem.interestRate = item.interestRate;
+        }
+
+        gameState.ownedItems.push(ownedItem);
+    }
+
+    updateOwnedItems();
+}
+
+// Sell Item
+function sellItem(itemId, category) {
+    const ownedItem = gameState.ownedItems.find(owned => owned.itemId === itemId && owned.category === category);
+    if (!ownedItem) return;
+
+    const item = findItem(itemId, category);
+    const daysOwned = gameState.daysPassed - ownedItem.purchaseDay;
+    const yearsOwned = daysOwned / 365;
+
+    // Calculate depreciated value
+    const depreciationRate = item.depreciation || 0.10;
+    const currentValue = ownedItem.purchasePrice * Math.pow(1 - depreciationRate, yearsOwned);
+
+    // If financed, need to pay off remaining balance
+    let saleProceeds = currentValue;
+    if (ownedItem.isFinanced && ownedItem.remainingBalance > 0) {
+        saleProceeds -= ownedItem.remainingBalance;
+    }
+
+    gameState.balance += saleProceeds;
+
+    // Decrease quantity or remove item
+    if (ownedItem.quantity > 1) {
+        ownedItem.quantity--;
+        // Reduce financing proportionally
+        if (ownedItem.isFinanced) {
+            const ratio = (ownedItem.quantity) / (ownedItem.quantity + 1);
+            ownedItem.remainingBalance *= ratio;
+            ownedItem.monthlyPayment *= ratio;
+        }
+    } else {
+        const index = gameState.ownedItems.indexOf(ownedItem);
+        gameState.ownedItems.splice(index, 1);
+    }
+
+    renderShop();
+    updateOwnedItems();
+    updateUI();
+}
+
+// Cancel subscription
+function cancelSubscription(itemId, category) {
+    const index = gameState.ownedItems.findIndex(owned => owned.itemId === itemId && owned.category === category);
+    if (index !== -1) {
+        gameState.ownedItems.splice(index, 1);
         updateOwnedItems();
+        renderShop();
+        updateUI();
     }
 }
 
@@ -204,13 +376,39 @@ function updateOwnedItems() {
         return;
     }
 
-    container.innerHTML = gameState.ownedItems.map(item => `
-        <div class="owned-item">
-            <span class="owned-emoji">${item.emoji}</span>
-            <span class="owned-name">${item.name}</span>
-            <span class="owned-cost">${formatMoney(item.monthlyExpense)}/mo</span>
-        </div>
-    `).join('');
+    container.innerHTML = gameState.ownedItems.map(owned => {
+        const item = findItem(owned.itemId, owned.category);
+        const daysOwned = gameState.daysPassed - owned.purchaseDay;
+        const yearsOwned = daysOwned / 365;
+        const depreciationRate = item.depreciation || 0.10;
+        const currentValue = owned.purchasePrice * Math.pow(1 - depreciationRate, yearsOwned);
+        const saleValue = owned.isFinanced ? currentValue - owned.remainingBalance : currentValue;
+
+        const totalMonthlyExpense = (item.monthlyExpense * (owned.quantity || 1)) + (owned.monthlyPayment || 0);
+
+        return `
+            <div class="owned-item">
+                <div class="owned-header">
+                    <span class="owned-emoji">${item.emoji}</span>
+                    <span class="owned-name">${item.name}${owned.quantity > 1 ? ` x${owned.quantity}` : ''}</span>
+                    <span class="owned-cost">${formatMoney(totalMonthlyExpense)}/mo</span>
+                </div>
+                ${owned.isFinanced ? `
+                    <div class="owned-financing">
+                        Loan: ${formatMoney(owned.remainingBalance)} remaining
+                    </div>
+                ` : ''}
+                <div class="owned-actions">
+                    <span class="sell-value">Sell: ${formatMoney(saleValue)}</span>
+                    ${item.isSubscription && item.canCancel ? `
+                        <button class="action-btn cancel-btn" onclick="cancelSubscription('${owned.itemId}', '${owned.category}')">Cancel</button>
+                    ` : `
+                        <button class="action-btn sell-btn" onclick="sellItem('${owned.itemId}', '${owned.category}')">Sell</button>
+                    `}
+                </div>
+            </div>
+        `;
+    }).join('');
 }
 
 // Game Controls
@@ -233,7 +431,7 @@ function gameOver() {
     clearInterval(gameState.gameLoop);
     document.getElementById('finalDays').textContent = `${gameState.daysPassed} days`;
     document.getElementById('finalIncome').textContent = formatMoney(gameState.annualIncome);
-    document.getElementById('finalItems').textContent = gameState.ownedItems.length;
+    document.getElementById('finalItems').textContent = gameState.ownedItems.reduce((sum, item) => sum + (item.quantity || 1), 0);
     showScreen('gameOverScreen');
 }
 

@@ -249,7 +249,32 @@ header h1 {
 .item-expense {
     font-size: 0.9em;
     color: #e74c3c;
-    margin-bottom: 15px;
+    margin-bottom: 10px;
+}
+
+.item-quantity {
+    font-size: 0.9em;
+    color: #28a745;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.item-down-payment {
+    font-size: 0.85em;
+    color: #667eea;
+    margin-bottom: 3px;
+}
+
+.item-financing {
+    font-size: 0.8em;
+    color: #f39c12;
+    margin-bottom: 10px;
+}
+
+.item-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
 }
 
 .item-btn {
@@ -258,7 +283,7 @@ header h1 {
     border: none;
     border-radius: 8px;
     padding: 10px 20px;
-    font-size: 1em;
+    font-size: 0.95em;
     cursor: pointer;
     transition: all 0.3s ease;
     width: 100%;
@@ -278,6 +303,14 @@ header h1 {
 
 .item-btn.owned-btn {
     background: #28a745;
+}
+
+.item-btn.finance-btn {
+    background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+}
+
+.item-btn.finance-btn:hover:not(:disabled) {
+    background: linear-gradient(135deg, #e67e22 0%, #f39c12 100%);
 }
 
 /* Owned Items */
@@ -304,10 +337,15 @@ header h1 {
     background: white;
     border-radius: 10px;
     padding: 15px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+    margin-bottom: 10px;
+}
+
+.owned-header {
     display: flex;
     align-items: center;
     gap: 15px;
-    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+    margin-bottom: 10px;
 }
 
 .owned-emoji {
@@ -323,6 +361,60 @@ header h1 {
 .owned-cost {
     color: #e74c3c;
     font-weight: bold;
+}
+
+.owned-financing {
+    font-size: 0.85em;
+    color: #f39c12;
+    padding: 5px 10px;
+    background: #fff3cd;
+    border-radius: 5px;
+    margin-bottom: 10px;
+}
+
+.owned-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+}
+
+.sell-value {
+    font-size: 0.9em;
+    color: #28a745;
+    font-weight: bold;
+}
+
+.action-btn {
+    background: #e74c3c;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 16px;
+    font-size: 0.9em;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.action-btn:hover {
+    background: #c0392b;
+    transform: translateY(-2px);
+}
+
+.sell-btn {
+    background: #e74c3c;
+}
+
+.sell-btn:hover {
+    background: #c0392b;
+}
+
+.cancel-btn {
+    background: #95a5a6;
+}
+
+.cancel-btn:hover {
+    background: #7f8c8d;
 }
 
 .no-items {
