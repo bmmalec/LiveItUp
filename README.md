@@ -51,7 +51,45 @@ open index.html
 python -m http.server 8000
 ```
 
-## Deploy to Azure Static Web Apps
+## Deployment Options
+
+### Deploy to GitHub Pages (Easiest & Free!)
+
+GitHub Pages is the simplest way to host your game for free!
+
+**Method 1: Via GitHub Settings (Recommended)**
+
+1. Push your code to GitHub (already done!)
+2. Go to your repository on GitHub
+3. Click "Settings" tab
+4. Scroll down to "Pages" section (left sidebar)
+5. Under "Source", select:
+   - Branch: `main` (or your default branch)
+   - Folder: `/ (root)`
+6. Click "Save"
+7. Wait 1-2 minutes for deployment
+8. Your game will be live at: `https://<your-username>.github.io/LiveItUp/`
+
+**Method 2: Create a gh-pages branch**
+
+```bash
+# Create and checkout gh-pages branch
+git checkout -b gh-pages
+
+# Push to GitHub
+git push -u origin gh-pages
+
+# Go to Settings > Pages and select gh-pages branch
+```
+
+**That's it!** Your game is now live and will auto-update whenever you push changes.
+
+**Custom Domain (Optional)**:
+- Go to Settings > Pages
+- Add your custom domain
+- Configure DNS with your domain provider
+
+### Deploy to Azure Static Web Apps
 
 ### Option 1: Deploy via Azure Portal
 
