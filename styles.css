@@ -313,6 +313,14 @@ header h1 {
     background: linear-gradient(135deg, #e67e22 0%, #f39c12 100%);
 }
 
+.item-btn.subscribe-btn {
+    background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+}
+
+.item-btn.subscribe-btn:hover:not(:disabled) {
+    background: linear-gradient(135deg, #2980b9 0%, #3498db 100%);
+}
+
 /* Owned Items */
 .owned-items {
     background: #f8f9fa;

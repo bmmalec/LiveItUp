@@ -8,23 +8,36 @@ const gameState = {
     isPaused: false,
     gameSpeed: 1,
     ownedItems: [], // Array of { itemId, category, quantity, purchasePrice, isFinanced, remainingBalance, monthlyPayment }
+    creditLimit: 0, // Based on income
+    totalDebt: 0,
+    netAssets: 0,
     gameLoop: null
 };
 
 // Game Items Data with depreciation and financing options
 const gameItems = {
     housing: [
-        { id: 'apartment', name: 'Studio Apartment', price: 150000, monthlyExpense: 1200, emoji: '🏢',
+        // Rent options (no purchase price, subscription-based)
+        { id: 'rent_studio', name: 'Rent: Studio Apartment', price: 0, monthlyExpense: 1800, emoji: '🏢',
+          isSubscription: true, allowMultiple: false, canCancel: true },
+        { id: 'rent_1bed', name: 'Rent: 1-Bedroom Apt', price: 0, monthlyExpense: 2500, emoji: '🏘️',
+          isSubscription: true, allowMultiple: false, canCancel: true },
+        { id: 'rent_2bed', name: 'Rent: 2-Bedroom Apt', price: 0, monthlyExpense: 3200, emoji: '🏡',
+          isSubscription: true, allowMultiple: false, canCancel: true },
+        { id: 'rent_luxury', name: 'Rent: Luxury Condo', price: 0, monthlyExpense: 5500, emoji: '🌆',
+          isSubscription: true, allowMultiple: false, canCancel: true },
+        // Purchase options
+        { id: 'apartment', name: 'Buy: Studio Apartment', price: 150000, monthlyExpense: 1200, emoji: '🏢',
           depreciation: 0.02, downPayment: 0.20, financeMonths: 360, interestRate: 0.04, allowMultiple: true },
-        { id: 'condo', name: 'Luxury Condo', price: 450000, monthlyExpense: 2800, emoji: '🏘️',
+        { id: 'condo', name: 'Buy: Luxury Condo', price: 450000, monthlyExpense: 2800, emoji: '🏘️',
           depreciation: 0.02, downPayment: 0.20, financeMonths: 360, interestRate: 0.04, allowMultiple: true },
-        { id: 'house', name: 'Suburban House', price: 650000, monthlyExpense: 3500, emoji: '🏡',
+        { id: 'house', name: 'Buy: Suburban House', price: 650000, monthlyExpense: 3500, emoji: '🏡',
           depreciation: 0.02, downPayment: 0.20, financeMonths: 360, interestRate: 0.04, allowMultiple: true },
-        { id: 'mansion', name: 'Mansion', price: 2500000, monthlyExpense: 12000, emoji: '🏰',
+        { id: 'mansion', name: 'Buy: Mansion', price: 2500000, monthlyExpense: 12000, emoji: '🏰',
           depreciation: 0.01, downPayment: 0.25, financeMonths: 360, interestRate: 0.035, allowMultiple: true },
-        { id: 'penthouse', name: 'Penthouse Suite', price: 5000000, monthlyExpense: 25000, emoji: '🌆',
+        { id: 'penthouse', name: 'Buy: Penthouse Suite', price: 5000000, monthlyExpense: 25000, emoji: '🌆',
           depreciation: 0.01, downPayment: 0.30, financeMonths: 360, interestRate: 0.035, allowMultiple: false },
-        { id: 'estate', name: 'Private Estate', price: 15000000, monthlyExpense: 75000, emoji: '🏛️',
+        { id: 'estate', name: 'Buy: Private Estate', price: 15000000, monthlyExpense: 75000, emoji: '🏛️',
           depreciation: 0.005, downPayment: 0.30, financeMonths: 360, interestRate: 0.03, allowMultiple: false }
     ],
     vehicles: [
@@ -98,7 +111,10 @@ function startGame(income) {
     gameState.annualIncome = income;
     gameState.monthlyIncome = income / 12;
     gameState.balance = income * 0.25; // Start with 3 months salary
+    gameState.creditLimit = income * 6; // Credit limit is 6x annual income
     gameState.monthlyExpenses = 0;
+    gameState.totalDebt = 0;
+    gameState.netAssets = 0;
     gameState.daysPassed = 0;
     gameState.ownedItems = [];
     gameState.isPaused = false;
@@ -174,6 +190,38 @@ function findItem(itemId, category) {
     return gameItems[category].find(item => item.id === itemId);
 }
 
+// Calculate total debt
+function calculateTotalDebt() {
+    return gameState.ownedItems.reduce((total, owned) => {
+        return total + (owned.remainingBalance || 0);
+    }, 0);
+}
+
+// Calculate net assets (total value of items - debt)
+function calculateNetAssets() {
+    let totalAssetValue = 0;
+
+    gameState.ownedItems.forEach(owned => {
+        const item = findItem(owned.itemId, owned.category);
+        // Skip subscriptions (they have no asset value)
+        if (item.isSubscription) return;
+
+        const daysOwned = gameState.daysPassed - owned.purchaseDay;
+        const yearsOwned = daysOwned / 365;
+        const depreciationRate = item.depreciation || 0.10;
+        const currentValue = owned.purchasePrice * Math.pow(1 - depreciationRate, yearsOwned);
+
+        totalAssetValue += currentValue * (owned.quantity || 1);
+    });
+
+    return totalAssetValue - calculateTotalDebt();
+}
+
+// Calculate available credit (credit limit - current debt)
+function getAvailableCredit() {
+    return gameState.creditLimit - calculateTotalDebt();
+}
+
 // Render Shop
 function renderShop() {
     renderCategory('housingItems', gameItems.housing, 'housing');
@@ -198,41 +246,73 @@ function createItemCard(item, category) {
 
     const ownedItem = gameState.ownedItems.find(owned => owned.itemId === item.id && owned.category === category);
     const quantity = ownedItem ? ownedItem.quantity : 0;
-    const canAfford = gameState.balance >= item.price;
-    const canAffordDownPayment = item.downPayment ? gameState.balance >= (item.price * item.downPayment) : canAfford;
+    const availableCredit = getAvailableCredit();
 
-    if (quantity > 0) {
+    // For subscriptions (rent, lifestyle), just need to afford monthly expense
+    const isSubscription = item.isSubscription || item.price === 0;
+
+    // Can afford if you have cash OR available credit
+    const canAffordCash = gameState.balance >= item.price;
+    const canAffordWithCredit = item.price > 0 && (gameState.balance + availableCredit) >= item.price;
+    const canAfford = canAffordCash || (canAffordWithCredit && !isSubscription);
+
+    // For financing, check if can afford down payment (cash or credit)
+    const downPaymentAmount = item.downPayment ? item.price * item.downPayment : item.price;
+    const canAffordDownPaymentCash = gameState.balance >= downPaymentAmount;
+    const canAffordDownPaymentCredit = (gameState.balance + availableCredit) >= downPaymentAmount;
+    const canAffordDownPayment = item.downPayment ? (canAffordDownPaymentCash || canAffordDownPaymentCredit) : canAfford;
+
+    if (quantity > 0 && !item.allowMultiple) {
         card.classList.add('owned');
     }
 
-    const downPaymentAmount = item.downPayment ? item.price * item.downPayment : item.price;
     const monthlyPayment = item.downPayment ? calculateMonthlyPayment(item.price - downPaymentAmount, item.interestRate, item.financeMonths) : 0;
+
+    // Determine which buttons to show
+    let buttonsHTML = '';
+    if (!ownedItem || item.allowMultiple || item.isSubscription) {
+        if (isSubscription) {
+            // Subscription items (rent, lifestyle)
+            buttonsHTML = `
+                <button class="item-btn subscribe-btn" data-action="subscribe">
+                    ${item.canCancel ? 'Subscribe' : 'Add'}
+                </button>
+            `;
+        } else {
+            // Purchase items
+            buttonsHTML = `
+                ${item.downPayment ? `
+                    <button class="item-btn ${canAffordDownPayment ? 'finance-btn' : 'disabled'}"
+                            ${canAffordDownPayment ? '' : 'disabled'}
+                            data-action="finance">
+                        Finance ${!canAffordDownPaymentCash ? '(using credit)' : ''}
+                    </button>
+                ` : ''}
+                <button class="item-btn ${canAfford ? '' : 'disabled'}"
+                        ${canAfford ? '' : 'disabled'}
+                        data-action="buy">
+                    Buy Cash ${!canAffordCash && canAffordWithCredit ? '(using credit)' : ''}
+                </button>
+            `;
+        }
+    }
 
     card.innerHTML = `
         <div class="item-emoji">${item.emoji}</div>
         <div class="item-name">${item.name}</div>
         ${quantity > 0 ? `<div class="item-quantity">Owned: ${quantity}</div>` : ''}
-        <div class="item-price">${formatMoney(item.price)}</div>
+        ${item.price > 0 ? `<div class="item-price">${formatMoney(item.price)}</div>` : ''}
         ${item.downPayment ? `
             <div class="item-down-payment">Down: ${formatMoney(downPaymentAmount)} (${(item.downPayment * 100).toFixed(0)}%)</div>
             <div class="item-financing">+${formatMoney(monthlyPayment)}/mo for ${item.financeMonths}mo</div>
         ` : ''}
         <div class="item-expense">${item.monthlyExpense > 0 ? formatMoney(item.monthlyExpense) + '/mo' : 'No upkeep'}</div>
         <div class="item-buttons">
-            ${(!ownedItem || item.allowMultiple) ? `
-                ${item.downPayment ? `
-                    <button class="item-btn ${canAffordDownPayment ? 'finance-btn' : 'disabled'}"
-                            ${canAffordDownPayment ? '' : 'disabled'}
-                            data-action="finance">Finance</button>
-                ` : ''}
-                <button class="item-btn ${canAfford ? '' : 'disabled'}"
-                        ${canAfford ? '' : 'disabled'}
-                        data-action="buy">Buy Cash</button>
-            ` : ''}
+            ${buttonsHTML}
         </div>
     `;
 
-    // Add event listeners for buy buttons
+    // Add event listeners for buttons
     const buyBtn = card.querySelector('[data-action="buy"]');
     if (buyBtn && canAfford) {
         buyBtn.addEventListener('click', () => buyItem(item, category, false));
@@ -241,6 +321,11 @@ function createItemCard(item, category) {
     const financeBtn = card.querySelector('[data-action="finance"]');
     if (financeBtn && canAffordDownPayment) {
         financeBtn.addEventListener('click', () => buyItem(item, category, true));
+    }
+
+    const subscribeBtn = card.querySelector('[data-action="subscribe"]');
+    if (subscribeBtn) {
+        subscribeBtn.addEventListener('click', () => buyItem(item, category, false));
     }
 
     return card;
@@ -256,29 +341,67 @@ function calculateMonthlyPayment(principal, annualRate, months) {
 // Buy Item
 function buyItem(item, category, useFinancing) {
     const cost = useFinancing && item.downPayment ? item.price * item.downPayment : item.price;
+    const availableCredit = getAvailableCredit();
 
+    // For subscriptions with no purchase price
+    if (item.price === 0 || item.isSubscription) {
+        addItem(item, category, false);
+        renderShop();
+        updateUI();
+        return;
+    }
+
+    // Check if can afford with cash
     if (gameState.balance >= cost) {
         gameState.balance -= cost;
         addItem(item, category, useFinancing);
         renderShop();
         updateUI();
     }
+    // Check if can afford with credit
+    else if (gameState.balance + availableCredit >= cost) {
+        // Use remaining cash, finance the rest as debt
+        const needsFromCredit = cost - gameState.balance;
+        gameState.balance = 0; // Use all available cash
+
+        // When using credit, item is automatically financed
+        addItem(item, category, true, needsFromCredit);
+        renderShop();
+        updateUI();
+    }
 }
 
-function addItem(item, category, isFinanced) {
+function addItem(item, category, isFinanced, creditUsed = 0) {
     const existingItem = gameState.ownedItems.find(owned => owned.itemId === item.id && owned.category === category);
 
     if (existingItem && item.allowMultiple) {
         existingItem.quantity = (existingItem.quantity || 1) + 1;
 
         // Add financing info if financed
-        if (isFinanced && item.downPayment) {
-            const principal = item.price * (1 - item.downPayment);
-            const monthlyPayment = calculateMonthlyPayment(principal, item.interestRate, item.financeMonths);
-            existingItem.isFinanced = true;
-            existingItem.remainingBalance = (existingItem.remainingBalance || 0) + principal;
-            existingItem.monthlyPayment = (existingItem.monthlyPayment || 0) + monthlyPayment;
-            existingItem.interestRate = item.interestRate;
+        if (isFinanced) {
+            let principal;
+            let interestRate;
+            let financeMonths;
+
+            if (creditUsed > 0) {
+                // Used credit to purchase
+                principal = creditUsed;
+                interestRate = 0.08; // Credit card rate ~8% APR
+                financeMonths = 120; // 10 years for credit purchases
+            } else if (item.downPayment) {
+                // Traditional financing
+                principal = item.price * (1 - item.downPayment);
+                interestRate = item.interestRate;
+                financeMonths = item.financeMonths;
+            }
+
+            if (principal) {
+                const monthlyPayment = calculateMonthlyPayment(principal, interestRate, financeMonths);
+                existingItem.isFinanced = true;
+                existingItem.remainingBalance = (existingItem.remainingBalance || 0) + principal;
+                existingItem.monthlyPayment = (existingItem.monthlyPayment || 0) + monthlyPayment;
+                existingItem.interestRate = interestRate;
+            }
         }
     } else if (!existingItem) {
         const ownedItem = {
@@ -293,13 +416,30 @@ function addItem(item, category, isFinanced) {
         };
 
         // Add financing info if financed
-        if (isFinanced && item.downPayment) {
-            const principal = item.price * (1 - item.downPayment);
-            const monthlyPayment = calculateMonthlyPayment(principal, item.interestRate, item.financeMonths);
-            ownedItem.isFinanced = true;
-            ownedItem.remainingBalance = principal;
-            ownedItem.monthlyPayment = monthlyPayment;
-            ownedItem.interestRate = item.interestRate;
+        if (isFinanced) {
+            let principal;
+            let interestRate;
+            let financeMonths;
+
+            if (creditUsed > 0) {
+                // Used credit to purchase
+                principal = creditUsed;
+                interestRate = 0.08; // Credit card rate ~8% APR
+                financeMonths = 120; // 10 years for credit purchases
+            } else if (item.downPayment) {
+                // Traditional financing
+                principal = item.price * (1 - item.downPayment);
+                interestRate = item.interestRate;
+                financeMonths = item.financeMonths;
+            }
+
+            if (principal) {
+                const monthlyPayment = calculateMonthlyPayment(principal, interestRate, financeMonths);
+                ownedItem.isFinanced = true;
+                ownedItem.remainingBalance = principal;
+                ownedItem.monthlyPayment = monthlyPayment;
+                ownedItem.interestRate = interestRate;
+            }
         }
 
         gameState.ownedItems.push(ownedItem);
@@ -361,11 +501,35 @@ function cancelSubscription(itemId, category) {
 
 // Update UI
 function updateUI() {
+    // Update financial stats
+    gameState.totalDebt = calculateTotalDebt();
+    gameState.netAssets = calculateNetAssets();
+    const availableCredit = getAvailableCredit();
+
     document.getElementById('balance').textContent = formatMoney(gameState.balance);
     document.getElementById('balance').className = 'stat-value ' + (gameState.balance < 0 ? 'negative' : gameState.balance < gameState.monthlyExpenses ? 'warning' : '');
     document.getElementById('income').textContent = formatMoney(gameState.annualIncome);
     document.getElementById('expenses').textContent = formatMoney(gameState.monthlyExpenses);
     document.getElementById('daysSurvived').textContent = gameState.daysPassed;
+
+    // Update new stats if elements exist
+    const netAssetsEl = document.getElementById('netAssets');
+    if (netAssetsEl) {
+        netAssetsEl.textContent = formatMoney(gameState.netAssets);
+        netAssetsEl.className = 'stat-value ' + (gameState.netAssets < 0 ? 'negative' : '');
+    }
+
+    const totalDebtEl = document.getElementById('totalDebt');
+    if (totalDebtEl) {
+        totalDebtEl.textContent = formatMoney(gameState.totalDebt);
+        totalDebtEl.className = 'stat-value ' + (gameState.totalDebt > 0 ? 'warning' : '');
+    }
+
+    const availableCreditEl = document.getElementById('availableCredit');
+    if (availableCreditEl) {
+        availableCreditEl.textContent = formatMoney(availableCredit);
+        availableCreditEl.className = 'stat-value ' + (availableCredit < gameState.creditLimit * 0.2 ? 'warning' : '');
+    }
 }
 
 function updateOwnedItems() {
