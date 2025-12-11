@@ -11,6 +11,7 @@ const gameState = {
     creditLimit: 0, // Based on income
     totalDebt: 0,
     netAssets: 0,
+    annuityPayments: [], // Array of { amount, nextPaymentDay, paymentsRemaining, yearlyIncrease }
     gameLoop: null
 };
 
@@ -104,6 +105,28 @@ function setupEventListeners() {
     document.getElementById('speedBtn').addEventListener('click', changeSpeed);
     document.getElementById('restartBtn').addEventListener('click', resetGame);
     document.getElementById('playAgainBtn').addEventListener('click', resetGame);
+
+    // Life events
+    document.getElementById('adjustIncomeBtn').addEventListener('click', openIncomeModal);
+    document.getElementById('powerballBtn').addEventListener('click', openPowerballModal);
+    document.getElementById('applyIncomeBtn').addEventListener('click', applyNewIncome);
+    document.getElementById('chooseCashBtn').addEventListener('click', () => choosePowerballPayout('cash'));
+    document.getElementById('chooseAnnuityBtn').addEventListener('click', () => choosePowerballPayout('annuity'));
+
+    // Modal close buttons
+    document.querySelectorAll('.close').forEach(btn => {
+        btn.addEventListener('click', closeModals);
+    });
+
+    // Close modal when clicking outside
+    window.addEventListener('click', (e) => {
+        if (e.target.classList.contains('modal')) {
+            closeModals();
+        }
+    });
+
+    // Update Powerball calculations when jackpot changes
+    document.getElementById('jackpotAmount').addEventListener('input', updatePowerballCalculations);
 }
 
 // Start Game
@@ -117,6 +140,7 @@ function startGame(income) {
     gameState.netAssets = 0;
     gameState.daysPassed = 0;
     gameState.ownedItems = [];
+    gameState.annuityPayments = [];
     gameState.isPaused = false;
     gameState.gameSpeed = 1;
 
@@ -175,6 +199,25 @@ function advanceDay() {
 
         gameState.monthlyExpenses = totalMonthlyExpenses;
         gameState.balance -= totalMonthlyExpenses;
+    }
+
+    // Check for annuity payments (every 365 days)
+    if (gameState.daysPassed % 365 === 0) {
+        gameState.annuityPayments.forEach(annuity => {
+            if (annuity.nextPaymentDay <= gameState.daysPassed && annuity.paymentsRemaining > 0) {
+                // Apply taxes (29% total: 24% federal + 5% state)
+                const afterTax = annuity.amount * 0.71;
+                gameState.balance += afterTax;
+
+                // Update for next payment
+                annuity.amount *= (1 + annuity.yearlyIncrease);
+                annuity.nextPaymentDay += 365;
+                annuity.paymentsRemaining--;
+            }
+        });
+
+        // Remove completed annuities
+        gameState.annuityPayments = gameState.annuityPayments.filter(a => a.paymentsRemaining > 0);
     }
 
     updateUI();
@@ -605,6 +648,87 @@ function resetGame() {
         clearInterval(gameState.gameLoop);
     }
     showScreen('startScreen');
+}
+
+// Life Events - Income Adjustment
+function openIncomeModal() {
+    document.getElementById('newIncome').value = gameState.annualIncome;
+    document.getElementById('incomeModal').style.display = 'block';
+}
+
+function applyNewIncome() {
+    const newIncome = parseInt(document.getElementById('newIncome').value);
+    if (newIncome > 0) {
+        gameState.annualIncome = newIncome;
+        gameState.monthlyIncome = newIncome / 12;
+        gameState.creditLimit = newIncome * 6;
+        updateUI();
+        closeModals();
+    }
+}
+
+// Life Events - Powerball
+function openPowerballModal() {
+    document.getElementById('powerballModal').style.display = 'block';
+    updatePowerballCalculations();
+}
+
+function updatePowerballCalculations() {
+    const jackpot = parseFloat(document.getElementById('jackpotAmount').value) || 100000000;
+
+    // Cash option calculations (52% of jackpot)
+    const cashValue = jackpot * 0.52;
+    const federalTaxCash = cashValue * 0.24;
+    const stateTaxCash = cashValue * 0.05;
+    const takeHomeCash = cashValue - federalTaxCash - stateTaxCash;
+
+    document.getElementById('cashValue').textContent = formatMoney(cashValue);
+    document.getElementById('federalTaxCash').textContent = '-' + formatMoney(federalTaxCash);
+    document.getElementById('stateTaxCash').textContent = '-' + formatMoney(stateTaxCash);
+    document.getElementById('takeHomeCash').textContent = formatMoney(takeHomeCash);
+
+    // Annuity calculations (30 payments with 5% annual increase)
+    const firstPayment = jackpot / 30; // Simplified: total divided by 30
+    const finalPayment = firstPayment * Math.pow(1.05, 29); // After 29 increases
+    const takeHomeFirst = firstPayment * 0.71; // After 29% taxes
+
+    document.getElementById('firstPayment').textContent = formatMoney(firstPayment);
+    document.getElementById('finalPayment').textContent = formatMoney(finalPayment);
+    document.getElementById('takeHomeAnnuity').textContent = formatMoney(takeHomeFirst);
+}
+
+function choosePowerballPayout(type) {
+    const jackpot = parseFloat(document.getElementById('jackpotAmount').value) || 100000000;
+
+    if (type === 'cash') {
+        // Lump sum: 52% of jackpot, minus 29% taxes
+        const cashValue = jackpot * 0.52;
+        const takeHome = cashValue * 0.71;
+        gameState.balance += takeHome;
+    } else {
+        // Annuity: 30 payments starting now, increasing 5% per year
+        const firstPayment = jackpot / 30;
+        const afterTax = firstPayment * 0.71;
+
+        // Add first payment immediately
+        gameState.balance += afterTax;
+
+        // Schedule remaining 29 payments
+        gameState.annuityPayments.push({
+            amount: firstPayment * 1.05, // Next year's payment (5% increase)
+            nextPaymentDay: gameState.daysPassed + 365,
+            paymentsRemaining: 29,
+            yearlyIncrease: 0.05
+        });
+    }
+
+    updateUI();
+    closeModals();
+}
+
+function closeModals() {
+    document.getElementById('incomeModal').style.display = 'none';
+    document.getElementById('powerballModal').style.display = 'none';
 }
 
 // Utility Functions

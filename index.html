@@ -80,6 +80,14 @@
                     <button id="restartBtn" class="control-btn">🔄 Restart</button>
                 </div>
 
+                <div class="life-events">
+                    <h3>💫 Life Events</h3>
+                    <div class="life-events-buttons">
+                        <button id="adjustIncomeBtn" class="event-btn">📈 Adjust Income</button>
+                        <button id="powerballBtn" class="event-btn">🎰 Win Powerball!</button>
+                    </div>
+                </div>
+
                 <div class="shop-container">
                     <!-- Housing -->
                     <div class="shop-category">
@@ -131,6 +139,83 @@
                     </div>
                 </div>
                 <button id="playAgainBtn" class="play-again-btn">Play Again</button>
+            </div>
+        </div>
+
+        <!-- Adjust Income Modal -->
+        <div id="incomeModal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h2>📈 Adjust Income</h2>
+                <p>Change your annual income (raise, bonus, new job, etc.)</p>
+                <div class="modal-form">
+                    <label for="newIncome">New Annual Income:</label>
+                    <input type="number" id="newIncome" min="0" step="1000" placeholder="Enter new income">
+                    <button id="applyIncomeBtn" class="modal-btn">Apply</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Powerball Modal -->
+        <div id="powerballModal" class="modal">
+            <div class="modal-content powerball-modal">
+                <span class="close">&times;</span>
+                <h2>🎰 Powerball Jackpot Winner!</h2>
+                <p class="powerball-intro">Congratulations! You've won the Powerball! Choose your payout option.</p>
+
+                <div class="modal-form">
+                    <label for="jackpotAmount">Advertised Jackpot Amount:</label>
+                    <input type="number" id="jackpotAmount" min="1000000" step="1000000" value="100000000" placeholder="Enter jackpot">
+
+                    <div class="powerball-options">
+                        <div class="payout-option">
+                            <h3>💰 Lump Sum Cash</h3>
+                            <div class="payout-details">
+                                <div class="payout-row">
+                                    <span>Cash Value (52%):</span>
+                                    <span id="cashValue" class="payout-amount">$52,000,000</span>
+                                </div>
+                                <div class="payout-row">
+                                    <span>Federal Tax (24%):</span>
+                                    <span id="federalTaxCash" class="tax-amount">-$12,480,000</span>
+                                </div>
+                                <div class="payout-row">
+                                    <span>State Tax (5%):</span>
+                                    <span id="stateTaxCash" class="tax-amount">-$2,600,000</span>
+                                </div>
+                                <div class="payout-row total">
+                                    <span><strong>Take Home:</strong></span>
+                                    <span id="takeHomeCash" class="payout-amount"><strong>$36,920,000</strong></span>
+                                </div>
+                            </div>
+                            <button id="chooseCashBtn" class="modal-btn cash-btn">Choose Lump Sum</button>
+                        </div>
+
+                        <div class="payout-option">
+                            <h3>📊 Annuity (30 Payments)</h3>
+                            <div class="payout-details">
+                                <div class="payout-row">
+                                    <span>First Payment (Now):</span>
+                                    <span id="firstPayment" class="payout-amount">$2,369,333</span>
+                                </div>
+                                <div class="payout-row">
+                                    <span>Annual Increase:</span>
+                                    <span class="payout-amount">5% per year</span>
+                                </div>
+                                <div class="payout-row">
+                                    <span>Final Payment (Year 30):</span>
+                                    <span id="finalPayment" class="payout-amount">$9,649,916</span>
+                                </div>
+                                <div class="payout-row total">
+                                    <span><strong>Take Home (First):</strong></span>
+                                    <span id="takeHomeAnnuity" class="payout-amount"><strong>$1,682,233</strong></span>
+                                </div>
+                                <p class="annuity-note">Payments arrive annually. Each payment taxed at 29%.</p>
+                            </div>
+                            <button id="chooseAnnuityBtn" class="modal-btn annuity-btn">Choose Annuity</button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
